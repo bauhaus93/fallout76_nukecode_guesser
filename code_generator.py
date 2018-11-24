@@ -1,11 +1,9 @@
 import string
-import random
 import logging
 import multiprocessing as mp
 import queue
 import time
 import collections
-import os
 
 import util
 import guess_word

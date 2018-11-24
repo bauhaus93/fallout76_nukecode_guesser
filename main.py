@@ -1,8 +1,6 @@
 import os
 import logging
 
-import tkinter
-
 import code_generator
 import util
 
