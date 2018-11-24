@@ -64,6 +64,7 @@ def create_codes_by_fragment(codes, codeword_fragment, wordlist_directory):
     logger.debug("All subprocesses stopped")
     return total_results
 
+#Created using https://www.reddit.com/r/fo76/comments/9ygyy9/stepbystep_guide_to_decrypting_launch_codes/
 def create_code(codes, codeword_original, wordlist, wordlist_sorted):
     alphabet_code = create_alphabet(codeword_original)
     alphabet = string.ascii_uppercase
