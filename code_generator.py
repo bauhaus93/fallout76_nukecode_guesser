@@ -15,7 +15,7 @@ logger = logging.getLogger()
 
 def create_codes_by_fragment(codes, codeword_fragment, wordlist_directory):
     logger.info("Creating codes by codeword fragment {}".format(codeword_fragment))
-    logger.info("Loading wordlist...")
+    logger.debug("Loading wordlist...")
     wordlist = util.load_dictionary(wordlist_directory)
     wordlist_sorted = [''.join(sorted(s)) for s in wordlist]
     logger.info("Wordlist size: {} words".format(len(wordlist)))
