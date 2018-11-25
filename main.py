@@ -16,7 +16,7 @@ if __name__ == "__main__":
     codeword_fragment = util.parse_codeword_fragment(CODEWORD_FRAGMENT)
     dict_dir = os.path.abspath(DICTIONARY_DIRECTORY)
     if codes is None:
-        logger.error("Codes could not be parsed, code string was '{}'".format(CODES_STR))
+        logger.error("Could not parse codes, code string was '{}'".format(CODES_STR))
     elif codeword_fragment is None:
         logger.error("Could not parse codeword fragment, fragment was '{}'".format(CODEWORD_FRAGMENT))
     else:
