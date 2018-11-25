@@ -24,14 +24,17 @@ def create_codes_by_fragment(codes, codeword_fragment, wordlist_directory):
     codewords = guess_word.guess_word_super(codeword_fragment, wordlist)
     if len(codewords) == 0:
         return []
-    logger.info("Possible codewords: {}".format(", ".join(codewords)))
+    elif len(codewords) > 10:
+        logger.info("Possible codewords count: {}".format(len(codewords)))
+    else:
+        logger.info("Possible codewords: {}".format(", ".join(codewords)))
 
     logger.info("Creating codes based on codewords...")
     process_count = min(len(codewords), os.cpu_count())
     input_queue = mp.Queue()
     output_queue = mp.Queue()
     worker_args = (codes, wordlist, wordlist_sorted, input_queue, output_queue)
-    logger.debug("Creating {} worker processes".format(process_count))
+    logger.info("Using {} worker processes".format(process_count))
     processes = [mp.Process(target=worker, args = worker_args) for _ in range(process_count)]
 
     [input_queue.put(cw) for cw in codewords]
@@ -48,7 +51,7 @@ def create_codes_by_fragment(codes, codeword_fragment, wordlist_directory):
         except queue.Empty:
             pass
 
-        if time.time() - last_print > 10:
+        if time.time() - last_print > 3:
             last_print = time.time()
             words_left = input_queue.qsize()
             done_count = start_words - words_left
@@ -60,7 +63,7 @@ def create_codes_by_fragment(codes, codeword_fragment, wordlist_directory):
             else:
                 time_left = "{:02}s".format(eta)
             logger.info("Codewords left: {:6} | Rate: {:4} Words/s | ETA: {:}".format(words_left, round(words_per_second), time_left))
-    logger.debug("Waiting for subprocesses to stop...")
+    logger.info("Waiting for subprocesses to stop...")
     [p.join() for p in processes]
     logger.debug("All subprocesses stopped")
     return total_results
@@ -108,22 +111,33 @@ def worker(codes, wordlist, wordlist_sorted, input_queue, output_queue):
         if len(result) > 0:
             output_queue.put(result)
 
-def print_results(results, hide_empty = True):
-    if len(results) == 0:
-        logger.info("No valid codes found!")
-    else:
-        logger.info("Codes found:")
+def create_summary_string(results):
+    total_codes = 0
+    empty_codewords = 0
+
+    for result in results:
+        total_codes += len(result.candidates)
+        if len(result.candidates) == 0:
+            empty_codewords = 0
+    res_str = ""
+    res_str += "Codes found: {}\n".format(total_codes)
+    res_str += "Empty codewords: {}".format(empty_codewords)
+    if total_codes > 0:
+        res_str += "\n{:15} | {:8} | {:8}\n".format("Codeword", "Word", "Code")
+        res_str += "-" * 37
         for result in results:
-            if len(result.candidates) == 0:
-                if not hide_empty:
-                    logger.info("Codeword = {}: No Candidates".format(result.codeword))
-            else:
-                logger.info("Codeword = {}".format(result.codeword))
-                for candidate in result.candidates:
-                    logger.info("\tCandidate: Word = {}, Code = {}".format(candidate.word, candidate.code))
-        logger.info("Codes end")
+            for candidate in result.candidates:
+                res_str += "\n{:15} | {:8} | {:8}".format(result.codeword, candidate.word, candidate.code)
+    return res_str
 
+def print_results(results):
+    for line in create_summary_string(results).split("\n"):
+        if len(line) > 0:
+            logger.info(line)
 
+def write_results(results, filepath):
+    with open(filepath, "w") as f:
+        f.write(create_summary_string(results))
 
 
 
