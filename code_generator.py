@@ -9,8 +9,7 @@ import os
 import util
 import word
 
-Result = collections.namedtuple('Result', ['codeword', 'candidates'])
-Candidate = collections.namedtuple('Candidate', ['word', 'code'])
+Result = collections.namedtuple('Result', ['codeword', 'word', 'code'])
 
 logger = logging.getLogger()
 
@@ -29,17 +28,18 @@ def create_codes_by_fragment(codes, codeword_fragment, wordlist_directory):
     else:
         logger.info("Possible codewords: {}".format(", ".join(codewords)))
 
-    logger.info("Creating codes based on codewords...")
+    logger.info("Creating codes based on codewords")
     process_count = min(len(codewords), os.cpu_count())
     input_queue = mp.Queue()
     output_queue = mp.Queue()
     worker_args = (codes, wordlist, wordlist_sorted, input_queue, output_queue)
-    logger.info("Using {} worker processes".format(process_count))
+    logger.info("Using {} subprocesses".format(process_count))
     processes = [mp.Process(target=worker, args = worker_args) for _ in range(process_count)]
 
     [input_queue.put(cw) for cw in codewords]
     [p.start() for p in processes]
-    total_results = []
+    results = []
+    code_set = set()
     
     start_time = time.time()
     last_print = start_time
@@ -47,7 +47,9 @@ def create_codes_by_fragment(codes, codeword_fragment, wordlist_directory):
     while input_queue.qsize() > 0 or output_queue.qsize() > 0:
         try:
             result = output_queue.get(timeout = 3)
-            total_results.append(result)
+            if not (result.code in code_set):
+                code_set.add(result.code)
+                results.append(result)
         except queue.Empty:
             pass
 
@@ -62,11 +64,11 @@ def create_codes_by_fragment(codes, codeword_fragment, wordlist_directory):
                 time_left = "{:02}m {:02}s".format(round(eta / 60), eta % 60)
             else:
                 time_left = "{:02}s".format(eta)
-            logger.info("Codewords left: {:6} | Rate: {:4} Words/s | ETA: {:}".format(words_left, round(words_per_second), time_left))
+            logger.info("Codewords left: {:6} | Rate: {:4} Words/s | ETA: {} | Codes found: {}".format(words_left, round(words_per_second), time_left, len(results)))
     logger.info("Finished code creation, waiting for subprocesses to stop...")
     [p.join() for p in processes]
     logger.debug("All subprocesses stopped")
-    return total_results
+    return results
 
 #Created using https://www.reddit.com/r/fo76/comments/9ygyy9/stepbystep_guide_to_decrypting_launch_codes/
 def create_code(codes, codeword_original, wordlist, wordlist_sorted):
@@ -95,32 +97,26 @@ def create_code(codes, codeword_original, wordlist, wordlist_sorted):
         for _w, wc in zip(word, word_conv):
             code = [c for (wf, c) in codes if wf == wc]
             final_code += str(code[0])
-        results.append(Candidate(word = word, code = final_code))
-    return Result(codeword = codeword_original, candidates = results)
+        results.append(Result(codeword = codeword_original, word = word, code = final_code))
+    return results
 
 def create_alphabet(codeword):
     return codeword + "".join([c for c in string.ascii_uppercase if not c in codeword])
 
 def worker(codes, wordlist, wordlist_sorted, input_queue, output_queue):
-    while not input_queue.empty():
+    while input_queue.qsize() > 0:
         codeword = input_queue.get()
-        result = create_code(codes, codeword, wordlist, wordlist_sorted)
-        if len(result) > 0:
+        results = create_code(codes, codeword, wordlist, wordlist_sorted)
+        for result in results:
             output_queue.put(result)
 
 def create_summary_string(results):
-    total_codes = 0
-
-    for result in results:
-        total_codes += len(result.candidates)
-    res_str = ""
-    res_str += "Codes found: {}".format(total_codes)
-    if total_codes > 0:
+    res_str = "Codes found: {}".format(len(results))
+    if len(results) > 0:
         res_str += "\n{:15} | {:8} | {:8}\n".format("Codeword", "Word", "Code")
         res_str += "-" * 37
         for result in results:
-            for candidate in result.candidates:
-                res_str += "\n{:15} | {:8} | {:8}".format(result.codeword, candidate.word, candidate.code)
+            res_str += "\n{:15} | {:8} | {:8}".format(result.codeword, result.word, result.code)
     return res_str
 
 def print_results(results):
