@@ -7,7 +7,7 @@ import collections
 import os
 
 import util
-import guess_word
+import word
 
 Result = collections.namedtuple('Result', ['codeword', 'candidates'])
 Candidate = collections.namedtuple('Candidate', ['word', 'code'])
@@ -21,7 +21,7 @@ def create_codes_by_fragment(codes, codeword_fragment, wordlist_directory):
     wordlist_sorted = [''.join(sorted(s)) for s in wordlist]
     logger.info("Wordlist size: {} words".format(len(wordlist)))
 
-    codewords = guess_word.guess_word_super(codeword_fragment, wordlist)
+    codewords = word.find_codewords(codeword_fragment, wordlist)
     if len(codewords) == 0:
         return []
     elif len(codewords) > 10:
