@@ -117,7 +117,7 @@ def create_summary_string(results):
     for result in results:
         total_codes += len(result.candidates)
     res_str = ""
-    res_str += "Codes found: {}\n".format(total_codes)
+    res_str += "Codes found: {}".format(total_codes)
     if total_codes > 0:
         res_str += "\n{:15} | {:8} | {:8}\n".format("Codeword", "Word", "Code")
         res_str += "-" * 37
