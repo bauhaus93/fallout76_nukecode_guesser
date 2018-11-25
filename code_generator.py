@@ -63,7 +63,7 @@ def create_codes_by_fragment(codes, codeword_fragment, wordlist_directory):
             else:
                 time_left = "{:02}s".format(eta)
             logger.info("Codewords left: {:6} | Rate: {:4} Words/s | ETA: {:}".format(words_left, round(words_per_second), time_left))
-    logger.info("Waiting for subprocesses to stop...")
+    logger.info("Finished code creation, waiting for subprocesses to stop...")
     [p.join() for p in processes]
     logger.debug("All subprocesses stopped")
     return total_results
@@ -113,15 +113,11 @@ def worker(codes, wordlist, wordlist_sorted, input_queue, output_queue):
 
 def create_summary_string(results):
     total_codes = 0
-    empty_codewords = 0
 
     for result in results:
         total_codes += len(result.candidates)
-        if len(result.candidates) == 0:
-            empty_codewords = 0
     res_str = ""
     res_str += "Codes found: {}\n".format(total_codes)
-    res_str += "Empty codewords: {}".format(empty_codewords)
     if total_codes > 0:
         res_str += "\n{:15} | {:8} | {:8}\n".format("Codeword", "Word", "Code")
         res_str += "-" * 37
