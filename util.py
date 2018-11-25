@@ -35,3 +35,13 @@ def parse_codecards(code_str):
             return None
         codes_parsed.append((char, num))
     return codes_parsed
+
+def parse_codeword_fragment(codeword_fragment):
+    valid_chars = string.ascii_uppercase + "_"
+    frag_parsed = ""
+    for char in codeword_fragment.upper():
+        if not char in valid_chars:
+            return None
+        else:
+            frag_parsed += char
+    return frag_parsed
