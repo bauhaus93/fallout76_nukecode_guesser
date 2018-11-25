@@ -99,10 +99,7 @@ def create_code(codes, codeword_original, wordlist, wordlist_sorted):
     return Result(codeword = codeword_original, candidates = results)
 
 def create_alphabet(codeword):
-    rest = string.ascii_uppercase
-    for c in codeword:
-        rest = rest.replace(c, '')
-    return codeword + rest
+    return codeword + "".join([c for c in string.ascii_uppercase if not c in codeword])
 
 def worker(codes, wordlist, wordlist_sorted, input_queue, output_queue):
     while not input_queue.empty():
