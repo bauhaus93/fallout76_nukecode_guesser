@@ -2,6 +2,8 @@ import os
 import string
 import logging
 
+logger = logging.getLogger()
+
 def setup_logger():
     FORMAT = r"[%(asctime)-15s] %(levelname)s - %(message)s"
     DATE_FORMAT = r"%Y-%m-%d %H:%M:%S"
@@ -27,13 +29,18 @@ def parse_codecards(code_str):
     codes_parsed = []
     for code in code_str.split(" "):
         if len(code) != 2:
+            logger.error("Codecard has incorrect length, must be 2, but got {}".format(len(code)))
             return None
         char = code[0].upper()
         try:
             num = int(code[1])
         except ValueError:
+            logger.info("Could not parse '{}' to integer, second part of codecard must be a number".format(code[1]))
             return None
         codes_parsed.append((char, num))
+    if len(codes_parsed) != 8:
+        logger.error("Need 8 codecards, but got {}".format(len(codes_parsed)))
+        return None
     return codes_parsed
 
 def parse_codeword_fragment(codeword_fragment):
@@ -41,6 +48,7 @@ def parse_codeword_fragment(codeword_fragment):
     frag_parsed = ""
     for char in codeword_fragment.upper():
         if not char in valid_chars:
+            logger.error("Char '{}' is not a valid codeword character, must be A-Z, a-z or _".format(char))
             return None
         else:
             frag_parsed += char
