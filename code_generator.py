@@ -4,6 +4,7 @@ import multiprocessing as mp
 import queue
 import time
 import collections
+import os
 
 import util
 import guess_word
@@ -26,7 +27,7 @@ def create_codes_by_fragment(codes, codeword_fragment, wordlist_directory):
     logger.info("Possible codewords: {}".format(", ".join(codewords)))
 
     logger.info("Creating codes based on codewords...")
-    process_count = min(len(codewords), 8)
+    process_count = min(len(codewords), os.cpu_count())
     input_queue = mp.Queue()
     output_queue = mp.Queue()
     worker_args = (codes, wordlist, wordlist_sorted, input_queue, output_queue)
@@ -40,7 +41,7 @@ def create_codes_by_fragment(codes, codeword_fragment, wordlist_directory):
     start_time = time.time()
     last_print = start_time
     start_words = len(codewords)
-    while (not input_queue.empty()) or (not output_queue.empty()):
+    while input_queue.qsize() > 0 or output_queue.qsize() > 0:
         try:
             result = output_queue.get(timeout = 3)
             total_results.append(result)
@@ -71,7 +72,11 @@ def create_code(codes, codeword_original, wordlist, wordlist_sorted):
 
     codeword = ""
     for (c, _n) in codes:
-        codeword += alphabet[alphabet_code.find(c)]
+        pos = alphabet_code.find(c)
+        if pos < 0 or pos >= 26:
+            print("'" + codeword_original + "'")
+            return []
+        codeword += alphabet[pos]
     
     codeword_sorted = "".join(sorted(codeword))
     candidate_indices = [i for (i, word) in enumerate(wordlist_sorted) if word == codeword_sorted]
@@ -103,17 +108,19 @@ def worker(codes, wordlist, wordlist_sorted, input_queue, output_queue):
         if len(result) > 0:
             output_queue.put(result)
 
-def print_results(results):
+def print_results(results, hide_empty = True):
     if len(results) == 0:
         logger.info("No valid codes found!")
     else:
         logger.info("Codes found:")
         for result in results:
-            logger.info("Codeword = {}".format(result.codeword))
-            for candidate in result.candidates:
-                logger.info("\tCandidate: Word = {}, Code = {}".format(candidate.word, candidate.code))
             if len(result.candidates) == 0:
-                logger.info("\tNo Candidates")
+                if not hide_empty:
+                    logger.info("Codeword = {}: No Candidates".format(result.codeword))
+            else:
+                logger.info("Codeword = {}".format(result.codeword))
+                for candidate in result.candidates:
+                    logger.info("\tCandidate: Word = {}, Code = {}".format(candidate.word, candidate.code))
         logger.info("Codes end")
 
 

@@ -6,6 +6,7 @@ import util
 
 CODES_STR = "C6 D8 E3 G9 L3 M8 R3 T3"
 CODEWORD_FRAGMENT = "P_RIG_TA_L"
+CODEWORD_FRAGMENT = "TA_L"
 DICTIONARY_DIRECTORY = os.path.join(".", "dicts")
 
 if __name__ == "__main__":
@@ -19,4 +20,4 @@ if __name__ == "__main__":
         logger.info("No valid codes found!")
     else:
         code_generator.print_results(results)
-    input("Press RETURN to exit")
+    #input("Press RETURN to exit")

@@ -2,6 +2,8 @@ import string
 import multiprocessing as mp
 import logging
 import time
+import os
+import re
 
 logger = logging.getLogger()
 
@@ -14,13 +16,28 @@ def guess_word_exact(codeword, wordlist):
     intersection = possible_codewords.intersection(wordlist)
     return list(intersection)
 
-def guess_word_super(codeword_fragment, wordlist, pool_size = 8, task_size = 100):
+def cull_list(codeword_fragment, wordlist):
+    size_before = len(wordlist)
+    wordlist = [word for word in wordlist if len(word) >= len(codeword_fragment) and len(set(word)) == len(word)]
+    ex = ""
+    for char in codeword_fragment:
+        if char == "_":
+            ex += "."
+        else:
+            ex += char
+    pattern = re.compile(ex)
+    wordlist = [word for word in wordlist if pattern.search(word) != None]
+    logger.info("Culled wordlist from {} to {} applicable words".format(size_before, len(wordlist)))
+
+    return wordlist
+
+def guess_word_super(codeword_fragment, wordlist, pool_size = os.cpu_count(), task_size = 100):
     logger.info("Guessing super codewords")
+    wordlist = wordlist.copy()
     possible_codewords = enum_possibilities(codeword_fragment)
     logger.info("Generated codewords from fragment: {}".format(len(possible_codewords)))
 
-    wordlist = [word for word in wordlist if len(word) >= len(codeword_fragment)]
-    logger.info("Applicable wordlist words: {}".format(len(wordlist)))
+    wordlist = cull_list(codeword_fragment, wordlist)
 
     words_found = set()
     pool = mp.Pool(processes = pool_size)
